@@ -1,0 +1,54 @@
+- name: Add Jenkins repo and install
+  apt_key:
+    url: https://pkg.jenkins.io/debian/jenkins.io.key
+    state: present
+
+- name: Add Jenkins apt repo
+  apt_repository:
+    repo: deb https://pkg.jenkins.io/debian binary/
+    state: present
+
+- name: Install Jenkins
+  apt:
+    name: jenkins
+    state: present
+    update_cache: yes
+
+- name: Ensure Jenkins is started and enabled
+  service:
+    name: jenkins
+    state: started
+    enabled: yes
+
+- name: Wait for Jenkins to be up
+  uri:
+    url: http://localhost:8080
+    status_code: 200
+  register: result
+  retries: 10
+  delay: 5
+  until: result.status == 200
+
+
+- name: Générer le fichier Groovy sécurisé depuis un template
+  template:
+    src: basic-security.groovy.j2
+    dest: /var/lib/jenkins/init.groovy.d/basic-security.groovy
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+  notify: Restart Jenkins
+
+- name: Copier le script Groovy d'ajout des agents
+  copy:
+    src: add-nodes.groovy
+    dest: /var/lib/jenkins/init.groovy.d/add-nodes.groovy
+    owner: jenkins
+    group: jenkins
+    mode: 0644
+  notify: Restart Jenkins
+
+- name: Redémarrer Jenkins pour exécuter les scripts
+  service:
+    name: jenkins
+    state: restarted
