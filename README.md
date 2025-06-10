@@ -186,9 +186,13 @@ There are multiple Java implementations which you can use. OpenJDK is the most p
 
 Update the Debian apt repositories, install OpenJDK 21, and check the installation with the commands:
 
+```bash
 sudo apt update
 sudo apt install fontconfig openjdk-21-jre
 java -version
+
+```
+
 
 openjdk version "21.0.3" 2024-04-16
 OpenJDK Runtime Environment (build 21.0.3+11-Debian-2)
@@ -207,6 +211,7 @@ Simple software management tasks like install, search and remove are easier with
 
 on node agent :
 
+```bash
 sudo useradd -r -md /var/jenkins_home -s /bin/bash jenkins
 
 cat /etc/passwd
@@ -221,6 +226,8 @@ sudo chown jenkins:jenkins -R /usr/local/jenkins-service
 
 sudo vi /usr/local/jenkins-service/start-agent.sh
 
+```
+
 ```bash
 #!/bin/bash
 cd /usr/local/jenkins-service
@@ -228,8 +235,6 @@ curl -sO http://192.168.122.144:8080/jnlpJars/agent.jar
 java -jar agent.jar -url http://192.168.122.144:8080/ -secret f9477b67f8f31457b8be68d2e8a4179e4a38eab96b37fc80fb1b6bd17dd913ed -name labvm2 -webSocket -workDir "/home/ubuntu/jenkins_home"
 
 exit 0
-
-
 
 ```
 
@@ -247,7 +252,7 @@ Description=Jenkins Agent
 
 [Service]
 User=jenkins
-WorkingDirectory=/home/jenkins/jenkins_home
+WorkingDirectory=/home/ubuntu/jenkins_home
 ExecStart=/bin/bash /usr/local/jenkins-service/start-agent.sh
 Restart=always
 
@@ -267,17 +272,19 @@ sudo systemctl status jenkins-agent.service
 
 add public ssh key to jenkins-user
 
+```bash
 curl -Lv http://localhost:8080/login 2>&1 | grep -i 'x-ssh-endpoint'
-
 
 ssh -i /home/hichem/.ssh/private_key -l jenkins-user -p 22 jenkins-server help
 
-
+```
 
 ## ###################################
 
 🛠 Solution avec Ansible (propre et sécurisée)
 📁 Arborescence Ansible recommandée
+
+```text
 
 jenkins-lab/
 ├── inventory.ini
@@ -298,9 +305,11 @@ jenkins-lab/
 │   |   ├── tasks/
 │   │   |   └── main.yml
 
+```
 
 # VENV
 
+```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install ansible
@@ -308,4 +317,5 @@ pip install passlib
 ansible-galaxy collection install community.libvirt
 sudo apt install pkg-config libvirt-dev python3-dev -y
 pip3 install libvirt-python
+```
 
