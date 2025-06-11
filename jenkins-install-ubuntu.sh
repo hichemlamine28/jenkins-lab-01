@@ -3,7 +3,7 @@
 sudo mkdir -p /etc/apt/keyrings
 sudo apt --fix-broken install -y
 sudo apt update
-sudo apt install -y fontconfig openjdk-21-jre openjdk-21-jre-headless net-tools
+sudo apt install -y fontconfig openjdk-21-jre-headless net-tools # openjdk-21-jre
 
 java -version
 

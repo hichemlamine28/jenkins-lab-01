@@ -1,0 +1,13 @@
+import jenkins.model.*
+import jenkins.model.JenkinsLocationConfiguration
+
+def instance = Jenkins.getInstance()
+
+// Désactive les builds sur le master
+instance.setNumExecutors(0)
+instance.save()
+
+// Configure l’URL Jenkins
+def jlc = JenkinsLocationConfiguration.get()
+jlc.setUrl("http://{{ hostvars[inventory_hostname].ansible_host }}:8080")
+jlc.save()

@@ -1,17 +1,21 @@
-- name: Add Jenkins repo and install
-  apt_key:
-    url: https://pkg.jenkins.io/debian/jenkins.io.key
-    state: present
+---
+- name: Add Jenkins GPG key
+  ansible.builtin.get_url:
+    url: https://pkg.jenkins.io/debian/jenkins.io-2023.key
+    dest: /etc/apt/keyrings/jenkins-keyring.asc
+    mode: '0644'
 
-- name: Add Jenkins apt repo
+- name: Add Jenkins repository
   apt_repository:
-    repo: deb https://pkg.jenkins.io/debian binary/
+    repo: "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/"
+    filename: jenkins
     state: present
+    update_cache: yes
 
-- name: Install Jenkins
+- name: Install Jenkins (latest version)
   apt:
     name: jenkins
-    state: present
+    state: latest
     update_cache: yes
 
 - name: Ensure Jenkins is started and enabled
@@ -20,35 +24,116 @@
     state: started
     enabled: yes
 
-- name: Wait for Jenkins to be up
+- name: Wait for Jenkins to be reachable (200 or 403)
   uri:
-    url: http://localhost:8080
-    status_code: 200
+    url: http://{{ hostvars[inventory_hostname].ansible_host }}:8080
+    # url: http://{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:8080
+    status_code: [200, 403]
   register: result
   retries: 10
   delay: 5
-  until: result.status == 200
+  until: result.status in [200, 403]
 
+- name: Créer le dossier .ssh pour Jenkins s'il n'existe pas
+  file:
+    path: /var/lib/jenkins/.ssh
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: '0700'
+
+- name: Generate SSH key for Jenkins master if not exists
+  ansible.builtin.openssh_keypair:
+    path: /var/lib/jenkins/.ssh/id_rsa
+    owner: jenkins
+    group: jenkins
+    mode: '0600'
+  when: not lookup('file', '/var/lib/jenkins/.ssh/id_rsa', errors='ignore')
+
+- name: Fetch public key from master
+  slurp:
+    src: /var/lib/jenkins/.ssh/id_rsa.pub
+  register: jenkins_pub
+
+- name: Add Jenkins master public key to agent authorized_keys
+  delegate_to: "{{ item }}"
+  ansible.builtin.authorized_key:
+    user: ubuntu
+    key: "{{ jenkins_pub['content'] | b64decode }}"
+  with_items: "{{ groups['agents'] }}"
+
+- name: Créer le dossier init.groovy.d si nécessaire
+  file:
+    path: /var/lib/jenkins/init.groovy.d
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: '0755'
+
+- name: Construire la liste des agents Jenkins
+  set_fact:
+    jenkins_agents_dynamic: "{{ jenkins_agents_dynamic | default([]) + [ { 'name': item, 'ip': hostvars[item]['ansible_host'] | default(hostvars[item]['ansible_default_ipv4']['address']) }] }}"
+  loop: "{{ groups['agents'] }}"
+
+- name: Construire la liste des agents Jenkins (Groovy-compatible)
+  set_fact:
+    jenkins_agents_groovy: |
+      [
+      {% for agent in jenkins_agents_dynamic %}
+        [name: '{{ agent.name }}', ip: '{{ agent.ip }}']{% if not loop.last %},{% endif %}
+      {% endfor %}
+      ]
 
 - name: Générer le fichier Groovy sécurisé depuis un template
   template:
-    src: basic-security.groovy.j2
-    dest: /var/lib/jenkins/init.groovy.d/basic-security.groovy
+    src: 1_login.groovy.j2
+    dest: /var/lib/jenkins/init.groovy.d/1_login.groovy
     owner: jenkins
     group: jenkins
     mode: '0644'
   notify: Restart Jenkins
 
-- name: Copier le script Groovy d'ajout des agents
-  copy:
-    src: add-nodes.groovy
-    dest: /var/lib/jenkins/init.groovy.d/add-nodes.groovy
+- name: Configurer l’URL de Jenkins et désactiver les builds sur le contrôleur
+  template:
+    src: 2_configure.groovy.j2
+    dest: /var/lib/jenkins/init.groovy.d/2_configure.groovy
     owner: jenkins
     group: jenkins
-    mode: 0644
+    mode: '0644'
   notify: Restart Jenkins
 
-- name: Redémarrer Jenkins pour exécuter les scripts
-  service:
-    name: jenkins
-    state: restarted
+- name: Désactiver le setup wizard & définir l’URL
+  template:
+    src: 3_disable_setup.groovy.j2
+    dest: /var/lib/jenkins/init.groovy.d/3_disable_setup.groovy
+    owner: jenkins
+    group: jenkins
+    mode: "0644"
+  notify: Restart Jenkins
+
+- name: Copier le script Groovy pour installer les plugins Jenkins
+  template:
+    src: 4_install_plugins.groovy.j2
+    dest: /var/lib/jenkins/init.groovy.d/4_install_plugins.groovy
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+  notify: Restart Jenkins
+
+- name: Ajouter dynamiquement le credential Jenkins ssh
+  template:
+    src: 5_add_jenkins_credential.groovy.j2
+    dest: /var/lib/jenkins/init.groovy.d/5_add_jenkins_credential.groovy
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+  notify: Restart Jenkins  
+
+- name: Ajouter dynamiquement les agents Jenkins
+  template:
+    src: 6_add_jenkins_agents.groovy.j2
+    dest: /var/lib/jenkins/init.groovy.d/6_add_jenkins_agents.groovy
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+  notify: Restart Jenkins

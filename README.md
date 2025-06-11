@@ -13,120 +13,9 @@
 
 ## 📦 Présentation
 
-Ce dépôt est un **laboratoire Jenkins** pour automatiser la CI/CD d'une petite application écrite en **Go** avec le framework **Echo**.  
-Il inclut des scripts Bash pour le build, les tests, le déploiement, et l'intégration avec Jenkins.
+Ce dépôt est un **laboratoire Jenkins** pour automatiser 
 
----
-
-## ⚙️ Technologies utilisées
-
-- 🐧 **Bash** — pour les scripts d'automatisation
-- 🐹 **Golang** — backend léger
-- 🚀 **Echo** — framework web rapide pour Go
-- ⚙️ **Jenkins** — pipeline CI/CD
-- 🐙 **GitHub** — gestion de code source
-
----
-
-## 📁 Structure du dépôt
-
-```text
-.
-├── Jenkinsfile             # Pipeline Jenkins declaratif
-├── build.sh                # Script de build Bash
-├── test.sh                 # Script de test
-├── deploy.sh              # Script de déploiement (optionnel)
-├── main.go                 # Application Go
-├── go.mod / go.sum         # Dépendances Go
-└── README.md               # Documentation
-```
-
-🚀 Exécution
-
-📌 Lancer l'application en local :
-
-```bash
-go run main.go
-```
-
-Accessible via http://localhost:1323
-
-🔧 Jenkins Pipeline
-Le fichier Jenkinsfile gère les étapes suivantes :
-
-🔍 Checkout du code source
-
-🧪 Tests automatiques
-
-🔨 Build de l'application
-
-🚀 Déploiement (optionnel ou à compléter)
-
-📜 Licence
-Ce projet est sous licence MIT. Voir le fichier LICENSE.
-
-🙌 Contribuer
-Les contributions sont les bienvenues ! Forke le repo, crée une branche et soumets une PR.
-
-
-
-
-## ###################################################
-
-
-In this lab, we will deploy the go-webapp-sample app that we saw in the lecture.
-
-This sample application uses Echo as web application framework and Gorm as the backend database.
-
-
-Clone this git repository under /home/username:
-
-```bash
-git clone https://github.com/kodekloudhub/go-webapp-sample
-```
-Now let us deploy the sample app from the repository that we just cloned. 
-Run the following commands:
-
-```bash
-cd /home/username/go-webapp-sample/
-go run main.go &
-```
-
-
-
-
-   ____    __
-  / __/___/ /  ___
- / _// __/ _ \/ _ \
-/___/\__/_//_/\___/ v4.6.3
-High performance, minimalist Go web framework
-https://echo.labstack.com
-
-
-
-
-You can now access the sample app using the Sample-App button located above the terminal.
-
-You can login with the following username and password:
-
-
-username: test
-
-password: test
-
-
- See this for more details and options
-
-https://github.com/kodekloudhub/go-webapp-sample
-
-or this
-
-https://github.com/ybkuroki/vuejs-webapp-sample
-
-
-
-
-## STEP 2 #####
+## STEP 1 : setup #####
 
 Now let us install Jenkins on the centos-host machine and configure it to run on port 8090 instead of the default port 8080.
 
@@ -208,79 +97,6 @@ Simple software management tasks like install, search and remove are easier with
 ## ################################################
 
 
-
-on node agent :
-
-```bash
-sudo useradd -r -md /var/jenkins_home -s /bin/bash jenkins
-
-cat /etc/passwd
-
-ls -l /var
-
-sudo mkdir -p /usr/local/jenkins-service
-
-sudo mv agent.jar /usr/local/jenkins-service/
-
-sudo chown jenkins:jenkins -R /usr/local/jenkins-service
-
-sudo vi /usr/local/jenkins-service/start-agent.sh
-
-```
-
-```bash
-#!/bin/bash
-cd /usr/local/jenkins-service
-curl -sO http://192.168.122.144:8080/jnlpJars/agent.jar
-java -jar agent.jar -url http://192.168.122.144:8080/ -secret f9477b67f8f31457b8be68d2e8a4179e4a38eab96b37fc80fb1b6bd17dd913ed -name labvm2 -webSocket -workDir "/home/ubuntu/jenkins_home"
-
-exit 0
-
-```
-
-```bash
-sudo chmod +x /usr/local/jenkins-service/start-agent.sh
-```
-
-```bash
-sudo vi /etc/systemd/system/jenkins-agent.service
-```
-
-```bash
-[Unit]
-Description=Jenkins Agent
-
-[Service]
-User=jenkins
-WorkingDirectory=/home/ubuntu/jenkins_home
-ExecStart=/bin/bash /usr/local/jenkins-service/start-agent.sh
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-
-```
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable jenkins-agent.service
-sudo systemctl start jenkins-agent.service
-sudo systemctl status jenkins-agent.service
-```
-
-
-
-add public ssh key to jenkins-user
-
-```bash
-curl -Lv http://localhost:8080/login 2>&1 | grep -i 'x-ssh-endpoint'
-
-ssh -i /home/hichem/.ssh/private_key -l jenkins-user -p 22 jenkins-server help
-
-```
-
-## ###################################
-
 🛠 Solution avec Ansible (propre et sécurisée)
 📁 Arborescence Ansible recommandée
 
@@ -288,24 +104,30 @@ ssh -i /home/hichem/.ssh/private_key -l jenkins-user -p 22 jenkins-server help
 
 jenkins-lab/
 ├── inventory.ini
-├── playbook.yml
+├── lab_jenkins.yml
 ├── roles/
-│   |── common/       # Install Java
+│   |── common/       # Installer Java sur tous les nodes
 │   |   ├── tasks/
 │   │   |   └── main.yml
 │   |── jenkins/      # Installer Jenkins sur labvm1
 │   |   ├── tasks/
 │   │   |   └── main.yml
-│   |   ├── files/
-│   │   |   ├── basic-security.groovy
-│   │   |   └── add-nodes.groovy
+│   |   ├── defaults/
+│   │   |   ├── main.yml
 │   |   ├── handlers/
 │   │   |   ├── main.yml
-│   |── ssh_setup/    # Gérer les clés SSH et la connexion master <-> agents
-│   |   ├── tasks/
-│   │   |   └── main.yml
+│   |   ├── templates/
+│   │   |   ├── 1_login.groovy.j2
+│   │   |   ├── 2_configure.groovy.j2
+│   │   |   ├── 3_disable_setup.groovy.j2
+│   │   |   ├── 4_install_plugins.groovy.j2
+│   │   |   ├── 5_add_jenkins_credential.groovy.j2
+│   │   |   ├── 6_add_jenkins_agents.groovy.j2
+
 
 ```
+
+
 
 # VENV
 
@@ -319,3 +141,17 @@ sudo apt install pkg-config libvirt-dev python3-dev -y
 pip3 install libvirt-python
 ```
 
+# Installer Le LAB Jenkins
+
+## Lancer le playbook Ansible
+
+```bash
+ansible-playbook lab-jenkins.yml -i inventory.ini --ask-vault-pass
+```
+
+
+## Lancer le script 
+
+```bash
+./lab_setup.sh
+```
