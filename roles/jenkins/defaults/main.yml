@@ -10,25 +10,7 @@ jenkins_workspace: "/home/ubuntu/jenkins"
 
 jenkins_plugins:
 
-  # - git
-  # - workflow-aggregator
-  # - blueocean
-  # - ssh
-  # - ssh-agent
-  # - ssh-credentials
-  # - credentials
-  # - plain-credentials
-  # - ssh-slaves
-  # - configuration-as-code
-  # - extended-choice-parameter
-  # - parameterized-trigger
-  # - credentials-binding
-  # - config-file-provider
-  # - timestamper
-  # - email-ext
-  # - pipeline-utility-steps
-
-  # Plugins core essentiels (ordre prioritaire)
+  # Plugins core essentiels (must start by this)
   - configuration-as-code            # config automatisée Jenkins
   - credentials                      # gestion des credentials (utilisé partout)
   - ssh-credentials                  # plugins SSH, essentiels pour agents

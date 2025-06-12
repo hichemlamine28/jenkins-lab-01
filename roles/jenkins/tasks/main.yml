@@ -84,7 +84,6 @@
       {% endfor %}
       ]
 
-
 - name: Appliquer tous les templates init.groovy.d
   template:
     src: "{{ item.src }}"
@@ -102,8 +101,6 @@
     - { src: check_script_execution.groovy.j2, dest: check_script_execution.groovy }
   register: template_results
 
-
-
 - name: Vérifier si au moins un template a changé
   set_fact:
     jenkins_templates_changed: "{{ template_results.results | selectattr('changed') | list | length > 0 }}"
@@ -114,7 +111,7 @@
     state: absent
   when: jenkins_templates_changed
 
-# Notify + handlers KO - timeout car la config de jenkins + plugins prennent trop du temps
+# Notify + handlers KO - timeout : La configuration initiale de jenkins + plugins .. etc prend trop du temps
 - name: Redémarrer Jenkins avec un délai d'attente plus long si au moins un template a changé
   command: systemctl restart jenkins
   async: 600         # Jusqu'à 10 minutes
@@ -131,7 +128,7 @@
   until: result.status in [200, 403]
 
 # Attendre la fin de la config auto de jenkins
-- name: Attendre que Jenkins ait terminé tous les scripts groovy (Config/Setup Wizard/Plugins/Credentials/Agents)
+- name: Attendre la fin des scripts Jenkins Config/Setup/Plugins/Credentials/Agents 
   stat:
     path: /var/lib/jenkins/.init_done
   register: init_done
