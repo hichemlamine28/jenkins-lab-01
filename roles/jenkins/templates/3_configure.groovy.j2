@@ -1,0 +1,52 @@
+import jenkins.model.*
+import java.util.Timer
+import java.util.TimerTask
+import java.util.logging.Logger
+
+def logger = Logger.getLogger("")
+
+logger.info("[Jenkins Init] Script de configuration différée démarré")
+
+// Attendre 10 secondes après le démarrage Jenkins avant d'exécuter la config
+new Timer().schedule(new TimerTask() {
+    @Override
+    void run() {
+        try {
+            def jlc = JenkinsLocationConfiguration.get()
+            def jenkinsUrl = "http://{{ hostvars[inventory_hostname].ansible_host }}:8080"
+            def adminEmail = "{{ jenkins_admin_email }}"
+
+            boolean changed = false
+
+            if (jlc.getUrl() != jenkinsUrl) {
+                jlc.setUrl(jenkinsUrl)
+                logger.info("[Jenkins Init] URL Jenkins mise à jour : ${jenkinsUrl}")
+                changed = true
+            }
+
+            if (jlc.getAdminAddress() != adminEmail) {
+                jlc.setAdminAddress(adminEmail)
+                logger.info("[Jenkins Init] Adresse mail admin mise à jour : ${adminEmail}")
+                changed = true
+            }
+
+            if (changed) {
+                jlc.save()
+                logger.info("[Jenkins Init] Configuration sauvegardée.")
+            }
+
+            Jenkins.instance.administrativeMonitors.each { monitor ->
+                if (monitor.id == "jenkins.location.ConfigureSystem") {
+                    monitor.disable(true)
+                    logger.info("[Jenkins Init] Moniteur '${monitor.id}' désactivé.")
+                }
+            }
+
+            Jenkins.instance.save()
+            logger.info("[Jenkins Init] Configuration terminée.")
+        } catch (Exception e) {
+            logger.severe("[Jenkins Init] Erreur lors de la configuration: " + e.getMessage())
+            e.printStackTrace()
+        }
+    }
+}, 10000)

@@ -84,56 +84,113 @@
       {% endfor %}
       ]
 
-- name: Générer le fichier Groovy sécurisé depuis un template
+
+- name: Appliquer tous les templates init.groovy.d
   template:
-    src: 1_login.groovy.j2
-    dest: /var/lib/jenkins/init.groovy.d/1_login.groovy
+    src: "{{ item.src }}"
+    dest: "/var/lib/jenkins/init.groovy.d/{{ item.dest }}"
     owner: jenkins
     group: jenkins
     mode: '0644'
-  notify: Restart Jenkins
+  with_items:
+    - { src: 1_install_plugins.groovy.j2, dest: 1_install_plugins.groovy }
+    - { src: 2_login.groovy.j2, dest: 2_login.groovy }
+    - { src: 3_configure.groovy.j2, dest: 3_configure.groovy }
+    - { src: 4_disable_setup.groovy.j2, dest: 4_disable_setup.groovy }
+    - { src: 5_add_jenkins_credential.groovy.j2, dest: 5_add_jenkins_credential.groovy }
+    - { src: 6_add_jenkins_agents.groovy.j2, dest: 6_add_jenkins_agents.groovy }
+    - { src: check_script_execution.groovy.j2, dest: check_script_execution.groovy }
+  register: template_results
 
-- name: Configurer l’URL de Jenkins et désactiver les builds sur le contrôleur
-  template:
-    src: 2_configure.groovy.j2
-    dest: /var/lib/jenkins/init.groovy.d/2_configure.groovy
-    owner: jenkins
-    group: jenkins
-    mode: '0644'
-  notify: Restart Jenkins
 
-- name: Désactiver le setup wizard & définir l’URL
-  template:
-    src: 3_disable_setup.groovy.j2
-    dest: /var/lib/jenkins/init.groovy.d/3_disable_setup.groovy
-    owner: jenkins
-    group: jenkins
-    mode: "0644"
-  notify: Restart Jenkins
+- name: Définir si au moins un template a changé
+  set_fact:
+    jenkins_templates_changed: "{{ template_results.results | selectattr('changed') | list | length > 0 }}"
 
-- name: Copier le script Groovy pour installer les plugins Jenkins
-  template:
-    src: 4_install_plugins.groovy.j2
-    dest: /var/lib/jenkins/init.groovy.d/4_install_plugins.groovy
-    owner: jenkins
-    group: jenkins
-    mode: '0644'
-  notify: Restart Jenkins
 
-- name: Ajouter dynamiquement le credential Jenkins ssh
-  template:
-    src: 5_add_jenkins_credential.groovy.j2
-    dest: /var/lib/jenkins/init.groovy.d/5_add_jenkins_credential.groovy
-    owner: jenkins
-    group: jenkins
-    mode: '0644'
-  notify: Restart Jenkins  
+- name: Supprimer le fichier témoin .init_done si présent (avant redémarrage)
+  file:
+    path: /var/lib/jenkins/.init_done
+    state: absent
+  when: jenkins_templates_changed
 
-- name: Ajouter dynamiquement les agents Jenkins
-  template:
-    src: 6_add_jenkins_agents.groovy.j2
-    dest: /var/lib/jenkins/init.groovy.d/6_add_jenkins_agents.groovy
-    owner: jenkins
-    group: jenkins
-    mode: '0644'
-  notify: Restart Jenkins
+
+- name: Redémarrer Jenkins (1ère fois si au moins un template a été modifié)
+  systemd:
+    name: jenkins
+    state: restarted
+  when: jenkins_templates_changed
+
+
+- name: Attendre que Jenkins ait terminé tous les scripts init.groovy.d
+  stat:
+    path: /var/lib/jenkins/.init_done
+  register: init_done
+  retries: 30
+  delay: 5
+  until: init_done.stat.exists
+  when: jenkins_templates_changed
+
+
+- name: Redémarrer Jenkins (2ème fois après exécution des scripts si au moins un template a été modifié)
+  systemd:
+    name: jenkins
+    state: restarted
+  when: jenkins_templates_changed
+
+
+
+# - name: Copier le script Groovy pour installer les plugins Jenkins
+#   template:
+#     src: 1_install_plugins.groovy.j2
+#     dest: /var/lib/jenkins/init.groovy.d/1_install_plugins.groovy
+#     owner: jenkins
+#     group: jenkins
+#     mode: '0644'
+#   notify: Restart Jenkins
+
+
+# - name: Générer le fichier Groovy sécurisé depuis un template
+#   template:
+#     src: 2_login.groovy.j2
+#     dest: /var/lib/jenkins/init.groovy.d/2_login.groovy
+#     owner: jenkins
+#     group: jenkins
+#     mode: '0644'
+#   notify: Restart Jenkins
+
+# - name: Configurer l’URL de Jenkins et désactiver les builds sur le contrôleur
+#   template:
+#     src: 3_configure.groovy.j2
+#     dest: /var/lib/jenkins/init.groovy.d/3_configure.groovy
+#     owner: jenkins
+#     group: jenkins
+#     mode: '0644'
+#   notify: Restart Jenkins
+
+# - name: Désactiver le setup wizard & définir l’URL
+#   template:
+#     src: 4_disable_setup.groovy.j2
+#     dest: /var/lib/jenkins/init.groovy.d/4_disable_setup.groovy
+#     owner: jenkins
+#     group: jenkins
+#     mode: "0644"
+#   notify: Restart Jenkins
+
+# - name: Ajouter dynamiquement le credential Jenkins ssh
+#   template:
+#     src: 5_add_jenkins_credential.groovy.j2
+#     dest: /var/lib/jenkins/init.groovy.d/5_add_jenkins_credential.groovy
+#     owner: jenkins
+#     group: jenkins
+#     mode: '0644'
+#   notify: Restart Jenkins  
+
+# - name: Ajouter dynamiquement les agents Jenkins
+#   template:
+#     src: 6_add_jenkins_agents.groovy.j2
+#     dest: /var/lib/jenkins/init.groovy.d/6_add_jenkins_agents.groovy
+#     owner: jenkins
+#     group: jenkins
+#     mode: '0644'
+#   notify: Restart Jenkins
