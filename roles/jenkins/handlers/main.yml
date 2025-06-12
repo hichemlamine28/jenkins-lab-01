@@ -2,3 +2,6 @@
   service:
     name: jenkins
     state: restarted
+  
+- name: Reload systemd
+  command: systemctl daemon-reexec

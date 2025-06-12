@@ -103,94 +103,46 @@
   register: template_results
 
 
-- name: Définir si au moins un template a changé
+
+- name: Vérifier si au moins un template a changé
   set_fact:
     jenkins_templates_changed: "{{ template_results.results | selectattr('changed') | list | length > 0 }}"
 
-
-- name: Supprimer le fichier témoin .init_done si présent (avant redémarrage)
+- name: Supprimer le fichier témoin  .init_done  si présent (avant Redémarrage de Jenkins)
   file:
     path: /var/lib/jenkins/.init_done
     state: absent
   when: jenkins_templates_changed
 
-
-- name: Redémarrer Jenkins (1ère fois si au moins un template a été modifié)
-  systemd:
-    name: jenkins
-    state: restarted
+# Notify + handlers KO - timeout car la config de jenkins + plugins prennent trop du temps
+- name: Redémarrer Jenkins avec un délai d'attente plus long si au moins un template a changé
+  command: systemctl restart jenkins
+  async: 600         # Jusqu'à 10 minutes
+  poll: 0            # Ne pas attendre la fin (mode fire-and-forget)
   when: jenkins_templates_changed
 
+- name: Attendre que Jenkins soit de nouveau disponible
+  uri:
+    url: http://{{ hostvars[inventory_hostname].ansible_host }}:8080
+    status_code: [200, 403]
+  register: result
+  retries: 10
+  delay: 5
+  until: result.status in [200, 403]
 
-- name: Attendre que Jenkins ait terminé tous les scripts init.groovy.d
+# Attendre la fin de la config auto de jenkins
+- name: Attendre que Jenkins ait terminé tous les scripts groovy (Config/Setup Wizard/Plugins/Credentials/Agents)
   stat:
     path: /var/lib/jenkins/.init_done
   register: init_done
-  retries: 30
-  delay: 5
+  retries: 100
+  delay: 20
   until: init_done.stat.exists
   when: jenkins_templates_changed
 
 
-- name: Redémarrer Jenkins (2ème fois après exécution des scripts si au moins un template a été modifié)
-  systemd:
-    name: jenkins
-    state: restarted
-  when: jenkins_templates_changed
-
-
-
-# - name: Copier le script Groovy pour installer les plugins Jenkins
-#   template:
-#     src: 1_install_plugins.groovy.j2
-#     dest: /var/lib/jenkins/init.groovy.d/1_install_plugins.groovy
-#     owner: jenkins
-#     group: jenkins
-#     mode: '0644'
-#   notify: Restart Jenkins
-
-
-# - name: Générer le fichier Groovy sécurisé depuis un template
-#   template:
-#     src: 2_login.groovy.j2
-#     dest: /var/lib/jenkins/init.groovy.d/2_login.groovy
-#     owner: jenkins
-#     group: jenkins
-#     mode: '0644'
-#   notify: Restart Jenkins
-
-# - name: Configurer l’URL de Jenkins et désactiver les builds sur le contrôleur
-#   template:
-#     src: 3_configure.groovy.j2
-#     dest: /var/lib/jenkins/init.groovy.d/3_configure.groovy
-#     owner: jenkins
-#     group: jenkins
-#     mode: '0644'
-#   notify: Restart Jenkins
-
-# - name: Désactiver le setup wizard & définir l’URL
-#   template:
-#     src: 4_disable_setup.groovy.j2
-#     dest: /var/lib/jenkins/init.groovy.d/4_disable_setup.groovy
-#     owner: jenkins
-#     group: jenkins
-#     mode: "0644"
-#   notify: Restart Jenkins
-
-# - name: Ajouter dynamiquement le credential Jenkins ssh
-#   template:
-#     src: 5_add_jenkins_credential.groovy.j2
-#     dest: /var/lib/jenkins/init.groovy.d/5_add_jenkins_credential.groovy
-#     owner: jenkins
-#     group: jenkins
-#     mode: '0644'
-#   notify: Restart Jenkins  
-
-# - name: Ajouter dynamiquement les agents Jenkins
-#   template:
-#     src: 6_add_jenkins_agents.groovy.j2
-#     dest: /var/lib/jenkins/init.groovy.d/6_add_jenkins_agents.groovy
-#     owner: jenkins
-#     group: jenkins
-#     mode: '0644'
-#   notify: Restart Jenkins
+# - name: Redémarrer Jenkins (2ème fois après exécution des scripts si au moins un template a été modifié)
+#   systemd:
+#     name: jenkins
+#     state: restarted
+#   when: jenkins_templates_changed

@@ -35,11 +35,19 @@ new Timer().schedule(new TimerTask() {
                 logger.info("[Jenkins Init] Configuration sauvegardée.")
             }
 
+            // Désactiver le moniteur de configuration d'emplacement
             Jenkins.instance.administrativeMonitors.each { monitor ->
                 if (monitor.id == "jenkins.location.ConfigureSystem") {
                     monitor.disable(true)
                     logger.info("[Jenkins Init] Moniteur '${monitor.id}' désactivé.")
                 }
+            }
+
+            // Mettre le nombre d'exécuteurs du contrôleur à 0
+            def instance = Jenkins.get()
+            if (instance.numExecutors != 0) {
+                instance.setNumExecutors(0)
+                logger.info("[Jenkins Init] Nombre d'exécuteurs du contrôleur mis à 0.")
             }
 
             Jenkins.instance.save()
