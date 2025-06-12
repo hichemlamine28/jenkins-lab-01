@@ -1,13 +1,19 @@
 # 🧪 Jenkins Lab 01 — Automatisation complète avec Ansible
 
-[![Build with Jenkins](https://img.shields.io/badge/Built%20With-Jenkins-blue?logo=jenkins)](https://www.jenkins.io/)
-[![Shell Script](https://img.shields.io/badge/Script-Bash-1f425f.svg?logo=gnu-bash)](https://www.gnu.org/software/bash/)
-[![Go Backend](https://img.shields.io/badge/Backend-Go-blue?logo=go)](https://golang.org/)
-[![Echo Framework](https://img.shields.io/badge/Framework-Echo-009688)](https://echo.labstack.com/)
-[![GitHub Repo stars](https://img.shields.io/github/stars/hichemlamine28/jenkins-lab-01?style=social)](https://github.com/hichemlamine28/jenkins-lab-01/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/hichemlamine28/jenkins-lab-01?style=social)](https://github.com/hichemlamine28/jenkins-lab-01/network)
-[![GitHub last commit](https://img.shields.io/github/last-commit/hichemlamine28/jenkins-lab-01)](https://github.com/hichemlamine28/jenkins-lab-01/commits)
+[![Built with Jenkins](https://img.shields.io/badge/Built%20With-Jenkins-blue?logo=jenkins)](https://www.jenkins.io/)
+[![Groovy](https://img.shields.io/badge/Script-Groovy-4298B8?logo=apache-groovy)](https://groovy-lang.org/)
+[![Ansible](https://img.shields.io/badge/Automation-Ansible-EE0000?logo=ansible)](https://www.ansible.com/)
+[![Ubuntu](https://img.shields.io/badge/OS-Ubuntu-E95420?logo=ubuntu)](https://ubuntu.com/)
+[![Java](https://img.shields.io/badge/Java-OpenJDK%2021-blue?logo=java)](https://openjdk.org/)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-Automated-007ec6?logo=githubactions)](https://en.wikipedia.org/wiki/CI/CD)
+[![SSH](https://img.shields.io/badge/Auth-SSH-2e9fff?logo=openssh)](https://www.openssh.com/)
+[![Python](https://img.shields.io/badge/Python-3.10+-3670A0?logo=python)](https://python.org)
+[![Shell](https://img.shields.io/badge/Shell-Bash-1f425f.svg?logo=gnubash)](https://www.gnu.org/software/bash/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/hichemlamine28/jenkins-lab-01?style=social)](https://github.com/hichemlamine28/jenkins-lab-01/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/hichemlamine28/jenkins-lab-01?style=social)](https://github.com/hichemlamine28/jenkins-lab-01/network)
+[![Last commit](https://img.shields.io/github/last-commit/hichemlamine28/jenkins-lab-01)](https://github.com/hichemlamine28/jenkins-lab-01/commits)
+
 
 ---
 
