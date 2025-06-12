@@ -1,157 +1,188 @@
-# 🧪 Jenkins Lab 01
+# 🧪 Jenkins Lab 01 — Automatisation complète avec Ansible
 
-[![Build with Jenkins](https://img.shields.io/badge/built%20with-Jenkins-blue?logo=jenkins)](https://www.jenkins.io/)
-[![Shell Script](https://img.shields.io/badge/script-bash-1f425f.svg?logo=gnu-bash)](https://www.gnu.org/software/bash/)
-[![Go Backend](https://img.shields.io/badge/backend-go-blue?logo=go)](https://golang.org/)
-[![Echo Framework](https://img.shields.io/badge/framework-echo-009688)](https://echo.labstack.com/)
+[![Build with Jenkins](https://img.shields.io/badge/Built%20With-Jenkins-blue?logo=jenkins)](https://www.jenkins.io/)
+[![Shell Script](https://img.shields.io/badge/Script-Bash-1f425f.svg?logo=gnu-bash)](https://www.gnu.org/software/bash/)
+[![Go Backend](https://img.shields.io/badge/Backend-Go-blue?logo=go)](https://golang.org/)
+[![Echo Framework](https://img.shields.io/badge/Framework-Echo-009688)](https://echo.labstack.com/)
 [![GitHub Repo stars](https://img.shields.io/github/stars/hichemlamine28/jenkins-lab-01?style=social)](https://github.com/hichemlamine28/jenkins-lab-01/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/hichemlamine28/jenkins-lab-01?style=social)](https://github.com/hichemlamine28/jenkins-lab-01/network)
 [![GitHub last commit](https://img.shields.io/github/last-commit/hichemlamine28/jenkins-lab-01)](https://github.com/hichemlamine28/jenkins-lab-01/commits)
-[![GitHub license](https://img.shields.io/github/license/hichemlamine28/jenkins-lab-01)](https://github.com/hichemlamine28/jenkins-lab-01/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
-## 📦 Présentation
+## 🚀 Présentation du projet
 
-Ce dépôt est un **laboratoire Jenkins** pour automatiser 
+Ce dépôt propose un **laboratoire Jenkins clé en main**, utilisant **Ansible** pour automatiser de bout en bout :
 
-## STEP 1 : setup #####
+- la **préparation d'une infrastructure existante** (au moins 2 VM Ubuntu – testée avec 4),
+- l'**installation de Java, Jenkins et tous les outils nécessaires**,
+- la **configuration complète de Jenkins** (login, mot de passe, clé SSH, URL, agents, plugins...),
+- la **génération automatique d'un inventaire dynamique** via `inventory_dynamic.py`.
 
-Now let us install Jenkins on the centos-host machine and configure it to run on port 8090 instead of the default port 8080.
+💡 **Objectif** : Fournir un environnement Jenkins opérationnel **en quelques minutes** sur une infrastructure virtuelle locale ou cloud.
 
+---
 
-You can refer to the Jenkins Installation Docs located here:
+## 🧱 Prérequis
 
+- 2+ VM Ubuntu (la première sera `master`, les autres seront des `agents`)
+- Accès SSH fonctionnel
+- Python3 + pip
+- Ansible
+- `libvirt` (si en local)
 
-https://www.jenkins.io/doc/book/installing/linux/#red-hat-centos
+---
 
+## 🛠️ Structure du projet
 
-
-# Ubuntu :
-```bash
-sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
-  https://pkg.jenkins.io/debian/jenkins.io-2023.key
-echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
-  https://pkg.jenkins.io/debian binary/ | sudo tee \
-  /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt-get update
-sudo apt-get install jenkins
+```text
+jenkins-lab/
+├── ansible.cfg                   # config ansible
+├── inventory.ini                 # (temporaire) inventaire initial
+├── inventory_dynamic.py          # Script Python pour générer dynamiquement l'inventaire
+├── lab_jenkins.yml               # Playbook principal
+├── lab_jenkins.sh                # Script de lancement complet
+├── group_vars/
+│   ├── all/                      # vars / vault chiffré contenant le login/password
+│   |   └── main.yml
+├── roles/
+│   ├── common/                   # Installation Java
+│   │   └── tasks/
+│   │       └── main.yml
+│   └── jenkins/                  # Installation & config Jenkins
+│       ├── defaults/
+│       │   └── main.yml
+│       ├── handlers/
+│       │   └── main.yml
+│       ├── tasks/
+│       │   └── main.yml
+│       └── templates/
+│           ├── 1_install_plugins.groovy.j2
+│           ├── 2_login.groovy.j2
+│           ├── 3_configure.groovy.j2
+│           ├── 4_disable_setup.groovy.j2
+│           ├── 5_add_jenkins_credential.groovy.j2
+│           ├── 6_add_jenkins_agents.groovy.j2
+│           ├── check_script_execution.groovy.j2
 ```
 
+---
 
-Beginning with Jenkins 2.335 and Jenkins 2.332.1, the package is configured with systemd rather than the older System V init. More information is available in "Managing systemd services".
+## ⚙️ Installation manuelle de Jenkins (Ubuntu)
 
-The package installation will:
-
-Setup Jenkins as a daemon launched on start. Run systemctl cat jenkins for more details.
-
-Create a ‘jenkins’ user to run this service.
-
-Direct console log output to systemd-journald. Run journalctl -u jenkins.service if you are troubleshooting Jenkins.
-
-Populate /lib/systemd/system/jenkins.service with configuration parameters for the launch, e.g JENKINS_HOME
-
-Set Jenkins to listen on port 8080. Access this port with your browser to start configuration.
-
-If Jenkins fails to start because a port is in use, run  
+### 🔧 Ajout du dépôt Jenkins
 
 ```bash
-systemctl edit jenkins 
+sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian/jenkins.io-2023.key
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update
+sudo apt install jenkins
 ```
 
-and add the following:
+> Depuis Jenkins 2.335, systemd est utilisé au lieu de init.d.
 
+### 🛠️ Configuration du port (si 8080 occupé)
 
+```bash
+sudo systemctl edit jenkins
+```
+
+Ajouter :
+
+```ini
 [Service]
 Environment="JENKINS_PORT=8081"
+```
 
-Here, "8081" was chosen but you can put another port available.
+---
 
-# Installation of Java
-
-Jenkins requires Java to run, yet not all Linux distributions include Java by default. Additionally, not all Java versions are compatible with Jenkins.
-
-There are multiple Java implementations which you can use. OpenJDK is the most popular one at the moment, we will use it in this guide.
-
-Update the Debian apt repositories, install OpenJDK 21, and check the installation with the commands:
+## ☕ Installation de Java (OpenJDK 21 recommandé)
 
 ```bash
 sudo apt update
 sudo apt install fontconfig openjdk-21-jre
 java -version
-
 ```
 
+Exemple attendu :
 
+```text
 openjdk version "21.0.3" 2024-04-16
 OpenJDK Runtime Environment (build 21.0.3+11-Debian-2)
 OpenJDK 64-Bit Server VM (build 21.0.3+11-Debian-2, mixed mode, sharing)
-
-
-# Why use apt and not apt-get or another command? 
-The apt command has been available since 2014. 
-It has a command structure that is similar to apt-get but was created to be a more pleasant experience for typical users. 
-Simple software management tasks like install, search and remove are easier with apt.
-
-
-## ################################################
-
-
-🛠 Solution avec Ansible (propre et sécurisée)
-📁 Arborescence Ansible recommandée
-
-```text
-
-jenkins-lab/
-├── inventory.ini
-├── lab_jenkins.yml
-├── roles/
-│   |── common/       # Installer Java sur tous les nodes
-│   |   ├── tasks/
-│   │   |   └── main.yml
-│   |── jenkins/      # Installer Jenkins sur labvm1
-│   |   ├── tasks/
-│   │   |   └── main.yml
-│   |   ├── defaults/
-│   │   |   ├── main.yml
-│   |   ├── handlers/
-│   │   |   ├── main.yml
-│   |   ├── templates/
-│   │   |   ├── 1_login.groovy.j2
-│   │   |   ├── 2_configure.groovy.j2
-│   │   |   ├── 3_disable_setup.groovy.j2
-│   │   |   ├── 4_install_plugins.groovy.j2
-│   │   |   ├── 5_add_jenkins_credential.groovy.j2
-│   │   |   ├── 6_add_jenkins_agents.groovy.j2
-
-
 ```
 
+ℹ️ `apt` est plus moderne et user-friendly que `apt-get`.
 
+---
 
-# VENV
+## 🧪 Déploiement automatisé avec Ansible
+
+### 📦 Création de l’environnement Python
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install ansible
-pip install passlib
+pip install ansible passlib
 ansible-galaxy collection install community.libvirt
 sudo apt install pkg-config libvirt-dev python3-dev -y
 pip3 install libvirt-python
 ```
 
-# Installer Le LAB Jenkins
+---
 
-## Lancer le playbook Ansible
+## 🚀 Déploiement du LAB Jenkins
 
-```bash
-ansible-playbook lab-jenkins.yml -i inventory.ini --ask-vault-pass
-```
+### 🧰 Étapes du lab :
 
+1. Génération de l’inventaire dynamique :
+   ```bash
+   ./inventory_dynamic.py
+   ```
 
-## Lancer le script 
+2. Lancement du playbook :
+   ```bash
+   ansible-playbook lab_jenkins.yml -i inventory.ini --ask-vault-pass
+   ```
 
-```bash
-./lab_setup.sh
-```
+3. Ou exécution directe avec script :
+   ```bash
+   ./lab_jenkins.sh
+   ```
+
+---
+
+## 🧩 Fonctionnalités automatisées
+
+✅ Détection automatique des VMs (1 master + N agents)  
+✅ Préparation des VMs (update, Java, etc.)  
+✅ Installation & configuration complète de Jenkins  
+✅ Envoi de la **clé SSH publique vers les agents**  
+✅ Ajout automatique des **credentials** sur Jenkins Master  
+✅ Installation des **plugins essentiels Jenkins**  
+✅ Configuration initiale (URL, sécurité, groovy scripts...)  
+✅ Compatible avec toute infrastructure existante (local ou cloud , il faut generer l'invetaire à la main si vous avez une infra différente)
+
+---
+
+## ⚖️ Licence
+
+Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](./LICENSE).
+
+---
+
+## 🤝 Contributions
+
+Les contributions sont les bienvenues !  
+Forkez, améliorez, proposez des PRs 🙏
+
+---
+
+## 👤 Auteur
+
+**Hichem Elamine**  
+💼 DevSecOps | Cloud | Automation  
+🌍 [LinkedIn](https://www.linkedin.com/in/hichemlamine/) | [GitHub](https://github.com/hichemlamine28)
+
+---
