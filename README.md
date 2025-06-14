@@ -88,7 +88,7 @@ sudo apt install jenkins
 
 > Depuis Jenkins 2.335, systemd est utilisé au lieu de init.d.
 
-### 🛠️ Configuration du port (si 8080 occupé)
+### 🛠️ Configuration du port (si {{ jenkins_port }} occupé)
 
 ```bash
 sudo systemctl edit jenkins
@@ -164,15 +164,22 @@ pip3 install libvirt-python
 depuis le node master:
 
 ```bash
-wget http://localhost:8080/jnlpJars/jenkins-cli.jar
+wget http://localhost:{{ jenkins_port }}/jnlpJars/jenkins-cli.jar
 
-java -jar jenkins-cli.jar -s http://localhost:8080 -auth admin:password help
+java -jar jenkins-cli.jar -s http://localhost:{{ jenkins_port }} -auth admin:password version
 
-alias jenkins-cli='java -jar ~/jenkins-cli.jar -s http://localhost:8080 -auth admin:password'
+alias jenkins-cli='java -jar ~/jenkins-cli.jar -s http://localhost:{{ jenkins_port }} -auth admin:password'
 
-jenkins-cli help
+or 
 
-jenkins-version
+alias jenkins='java -jar ~/jenkins-cli.jar -s http://localhost:{{ jenkins_port }} -auth admin:password'
+
+jenkins-cli help  
+jenkins-cli version  
+
+
+jenkins who-am-i
+jenkins version
 ```
 
 Autre Solution: Utilisation du sshd + port
@@ -181,7 +188,7 @@ Autre Solution: Utilisation du sshd + port
 
 ```bash
 
-curl -Lv http://localhost:8080/login 2>&1 | grep -i 'x-ssh-endpoint'
+curl -Lv http://localhost:{{ jenkins_port }}/login 2>&1 | grep -i 'x-ssh-endpoint'
 
 ssh -p 2222 admin@localhost version
 

@@ -9,7 +9,7 @@ def instance = Jenkins.getInstance()
 println "--> Création de l'utilisateur admin avec infos complètes"
 
 def hudsonRealm = new HudsonPrivateSecurityRealm(false)
-def user = hudsonRealm.createAccount("{{ jenkins_admin_user }}", "{{ jenkins_admin_password_plain }}")
+def user = hudsonRealm.createAccount("{{ jenkins_admin_user }}", "{{ jenkins_admin_password }}")
 instance.setSecurityRealm(hudsonRealm)
 
 def strategy = new FullControlOnceLoggedInAuthorizationStrategy()

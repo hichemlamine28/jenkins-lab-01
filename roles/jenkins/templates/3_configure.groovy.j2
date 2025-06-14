@@ -13,7 +13,7 @@ new Timer().schedule(new TimerTask() {
     void run() {
         try {
             def jlc = JenkinsLocationConfiguration.get()
-            def jenkinsUrl = "http://{{ hostvars[inventory_hostname].ansible_host }}:8080"
+            def jenkinsUrl = "http://{{ hostvars[inventory_hostname].ansible_host }}:{{ jenkins_port }}"
             def adminEmail = "{{ jenkins_admin_email }}"
 
             boolean changed = false
@@ -45,8 +45,8 @@ new Timer().schedule(new TimerTask() {
 
             // Mettre le nombre d'exécuteurs du contrôleur à 0
             def instance = Jenkins.get()
-            if (instance.numExecutors != 0) {
-                instance.setNumExecutors(0)
+            if (instance.numExecutors != {{ jenkins_master_executors }}) {
+                instance.setNumExecutors({{ jenkins_master_executors }})
                 logger.info("[Jenkins Init] Nombre d'exécuteurs du contrôleur mis à 0.")
             }
 

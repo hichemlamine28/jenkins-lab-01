@@ -28,12 +28,12 @@
       register: firefox_installed
 
     - name: Open Jenkins in Chrome
-      command: google-chrome http://{{ jenkins_ip }}:8080
+      command: google-chrome http://{{ jenkins_ip }}:{{ jenkins_port }}
       when: chrome_installed.stat.exists
       ignore_errors: yes
 
     - name: Open Jenkins in Firefox (if Chrome not installed)
-      command: firefox http://{{ jenkins_ip }}:8080
+      command: firefox http://{{ jenkins_ip }}:{{ jenkins_port }}
       when:
         - not chrome_installed.stat.exists
         - firefox_installed.stat.exists
@@ -43,7 +43,7 @@
       debug:
         msg: >-
           Aucun navigateur compatible trouvé. Veuillez installer Google Chrome ou Firefox.
-          Vous pouvez ensuite accéder à Jenkins manuellement ici : http://{{ jenkins_ip }}:8080
+          Vous pouvez ensuite accéder à Jenkins manuellement ici : http://{{ jenkins_ip }}:{{ jenkins_port }}
       when:
         - not chrome_installed.stat.exists
         - not firefox_installed.stat.exists
