@@ -50,6 +50,22 @@ new Timer().schedule(new TimerTask() {
                 logger.info("[Jenkins Init] Nombre d'exécuteurs du contrôleur mis à 0.")
             }
 
+            // === Activation SSHD et configuration du port ===
+            def sshd = org.jenkinsci.main.modules.sshd.SSHD.get()
+            if (sshd != null) {
+                if (sshd.getPort() != {{ sshd_port }}) {
+                    sshd.setPort({{ sshd_port }})
+                    logger.info("[Jenkins Init] Port SSHD défini à {{ sshd_port }}.")
+                }
+                if (!sshd.isEnable()) {
+                    sshd.setEnable(true)
+                    logger.info("[Jenkins Init] SSHD activé.")
+                }
+                sshd.save()
+            } else {
+                logger.warning("[Jenkins Init] Plugin SSHD introuvable.")
+            }
+
             Jenkins.instance.save()
             logger.info("[Jenkins Init] Configuration terminée.")
         } catch (Exception e) {

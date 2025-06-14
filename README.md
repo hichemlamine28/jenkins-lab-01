@@ -159,6 +159,36 @@ pip3 install libvirt-python
 
 ---
 
+## Jenkins CLI
+
+depuis le node master:
+
+```bash
+wget http://localhost:8080/jnlpJars/jenkins-cli.jar
+
+java -jar jenkins-cli.jar -s http://localhost:8080 -auth admin:password help
+
+alias jenkins-cli='java -jar ~/jenkins-cli.jar -s http://localhost:8080 -auth admin:password'
+
+jenkins-cli help
+
+jenkins-version
+```
+
+Autre Solution: Utilisation du sshd + port
+
+
+
+```bash
+
+curl -Lv http://localhost:8080/login 2>&1 | grep -i 'x-ssh-endpoint'
+
+ssh -p 2222 admin@localhost version
+
+```
+
+
+
 ## 🧩 Fonctionnalités automatisées
 
 ✅ Détection automatique des VMs (1 master + N agents)  

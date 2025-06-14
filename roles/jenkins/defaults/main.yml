@@ -6,6 +6,10 @@ ssh_credential_id: "jenkins-master-ssh"
 
 ssh_user: "ubuntu"
 
+sshd_port: "2222"
+
+num_executors: "0"
+
 jenkins_workspace: "/home/ubuntu/jenkins"
 
 jenkins_plugins:
