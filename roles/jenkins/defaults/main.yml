@@ -12,7 +12,7 @@ ssh_user: "ubuntu"
 
 sshd_port: "2222"
 
-# jenkins_port: "8080"
+jenkins_port: "8080"
 
 jenkins_plugins:
 
