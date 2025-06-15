@@ -23,10 +23,6 @@ def extract_vm_number(name):
     match = re.search(r'labvm[-]?(\d+)', name)
     return int(match.group(1)) if match else float('inf')
 
-def is_labvm(name):
-    """Retourne True si le nom de la VM commence par 'labvm'."""
-    return name.startswith('labvm')
-
 def main():
     try:
         conn = libvirt.open('qemu:///system')
@@ -40,15 +36,14 @@ def main():
     for id in conn.listDomainsID():
         dom = conn.lookupByID(id)
         name = dom.name()
-        if is_labvm(name):
-            ip_list = get_domain_ips(dom)
-            ip = ip_list[0] if ip_list else "UNKNOWN"
-            vms[name] = ip
+        ip_list = get_domain_ips(dom)
+        ip = ip_list[0] if ip_list else "UNKNOWN"
+        vms[name] = ip
 
     # Récupère les VMs inactives
     defined_domains = conn.listDefinedDomains()
     for name in defined_domains:
-        if name not in vms and is_labvm(name):
+        if name not in vms:
             dom = conn.lookupByName(name)
             vms[name] = "OFFLINE"
 
@@ -66,10 +61,11 @@ def main():
         lines.append("")
 
         agents = sorted_vms[1:]
-        lines.append("[agents]")
-        for name, ip in agents:
-            lines.append(f"{name} ansible_host={ip}")
-        lines.append("") 
+        if agents:
+            lines.append("[agents]")
+            for name, ip in agents:
+                lines.append(f"{name} ansible_host={ip}")
+            lines.append("")
 
     # Ajoute les variables globales
     lines.append("[all:vars]")

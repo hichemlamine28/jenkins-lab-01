@@ -134,6 +134,8 @@ pip install ansible passlib
 ansible-galaxy collection install community.libvirt
 sudo apt install pkg-config libvirt-dev python3-dev -y
 pip3 install libvirt-python
+pip install lxml
+
 ```
 
 ---

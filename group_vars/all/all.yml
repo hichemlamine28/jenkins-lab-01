@@ -63,7 +63,7 @@ jenkins_plugins:
   - extensible-choice-parameter      # Paramètre avec choix simples
   - validating-string-parameter      # Validating String Parameter
   - show-build-parameters            # Show Build Parameters
-  - pipeline-as-yaml                 # 🆕 Pipelines Jenkins en YAML:
+  # - pipeline-as-yaml                 # 🆕 Pipelines Jenkins en YAML:
   - validating-yaml-parameter        # validating Yaml Parameter
 
   ## 🖼️ UI & Visualisation
